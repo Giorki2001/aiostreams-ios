@@ -149,6 +149,7 @@ final class PlayerChannel {
         skipped = []
         addedURLs = [:]
         model?.playerActive = true
+        model?.airPlayProblem = nil
         event("start")
 
         var options = LoadOptions()
@@ -190,6 +191,7 @@ final class PlayerChannel {
         skips = []
         model?.playerActive = false
         model?.statsVisible = false
+        model?.airPlayProblem = nil
         if model?.fullscreen == true { model?.setFullscreen(false) }
         report(["idle": true])
     }

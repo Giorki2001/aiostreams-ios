@@ -98,3 +98,26 @@ struct AirPlayNotice: View {
         }
     }
 }
+
+/// The AirPlay receiver turned the stream down: say why, and what works instead.
+struct AirPlayProblem: View {
+    let text: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "exclamationmark.tv")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Color.brand)
+            Text(text)
+                .font(.footnote.weight(.semibold))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxWidth: 460)
+        .glassEffect(.regular, in: .rect(cornerRadius: 20))
+        .allowsHitTesting(false)
+        .transition(.opacity)
+    }
+}

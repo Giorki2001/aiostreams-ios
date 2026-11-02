@@ -24,11 +24,24 @@ final class LogBuffer: @unchecked Sendable {
     }
 
     func append(_ line: String) {
+        if line.contains("addSourceBuffer"), line.contains("unsupported") {
+            Self.receiverRefused(line)
+        }
         let stamped = "\(clock.string(from: Date())) \(line)"
         lock.lock()
         lines.append(stamped)
         if lines.count > limit { lines.removeFirst(lines.count - limit) }
         lock.unlock()
+    }
+
+    /// A smart TV's AirPlay receiver plays the stream in its own browser engine and says
+    /// which formats it turned down only in AVPlayer's error log, which the engine copies here.
+    private static func receiverRefused(_ line: String) {
+        let lower = line.lowercased()
+        let hevc = ["hvc1", "hev1", "dvh1", "dvhe"].contains { lower.contains($0) }
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .airPlayReceiverRefused, object: nil, userInfo: ["hevc": hevc])
+        }
     }
 
     /// The last `count` lines, oldest first.
@@ -37,6 +50,10 @@ final class LogBuffer: @unchecked Sendable {
         defer { lock.unlock() }
         return lines.suffix(count).joined(separator: "\n")
     }
+}
+
+extension Notification.Name {
+    static let airPlayReceiverRefused = Notification.Name("AirPlayReceiverRefused")
 }
 
 /// The app's own lines, for what the engine can't see: the audio route and the network.

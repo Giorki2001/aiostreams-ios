@@ -103,13 +103,16 @@ extension RootView {
 
         VStack(spacing: 10) {
             VolumeHUD(levels: model.levels)
-            if chrome.visible {
+            if let problem = model.airPlayProblem {
+                AirPlayProblem(text: problem)
+            } else if chrome.visible {
                 AirPlayNotice(engine: model.engine)
             }
         }
         .padding(.top, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .animation(.easeInOut(duration: 0.3), value: chrome.visible)
+        .animation(.easeInOut(duration: 0.3), value: model.airPlayProblem)
     }
 }
 

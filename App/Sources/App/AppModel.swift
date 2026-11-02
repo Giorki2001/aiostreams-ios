@@ -47,6 +47,8 @@ final class AppModel: ObservableObject {
     @Published var loadError: String?
     @Published var subtitleStyle = SubtitleStyle()
     @Published var subtitleDelayMs: Double = 0
+    /// Why the AirPlay receiver shows nothing, while the sound is still routed to it.
+    @Published var airPlayProblem: String?
 
     let engine: AetherEngine
     let bridge: AppBridge
@@ -90,7 +92,26 @@ final class AppModel: ObservableObject {
         }
 
         NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)
-            .sink { _ in AppLog.route() }
+            .sink { [weak self] _ in
+                AppLog.route()
+                let airPlay = AVAudioSession.sharedInstance().currentRoute.outputs.contains { $0.portType == .airPlay }
+                DispatchQueue.main.async {
+                    if !airPlay { self?.airPlayProblem = nil }
+                }
+            }
+            .store(in: &cancellables)
+        NotificationCenter.default.publisher(for: .airPlayReceiverRefused)
+            .sink { [weak self] note in
+                let hevc = note.userInfo?["hevc"] as? Bool ?? false
+                let problem = hevc
+                    ? "La TV non accetta video HEVC (4K, HDR, Dolby Vision) via AirPlay. Scegli una versione H.264 o usa la duplicazione schermo."
+                    : "La TV non accetta il formato di questo video via AirPlay. Prova un'altra versione o usa la duplicazione schermo."
+                MainActor.assumeIsolated {
+                    guard let self, self.airPlayProblem != problem else { return }
+                    self.airPlayProblem = problem
+                    AppLog.emit("AirPlay receiver refused the stream (hevc=\(hevc))")
+                }
+            }
             .store(in: &cancellables)
 
         $playerActive
