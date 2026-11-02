@@ -192,7 +192,6 @@ final class PlayerChannel {
         model?.playerActive = false
         model?.statsVisible = false
         model?.airPlayProblem = nil
-        if model?.fullscreen == true { model?.setFullscreen(false) }
         report(["idle": true])
     }
 

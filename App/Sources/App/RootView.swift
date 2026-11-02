@@ -45,7 +45,7 @@ struct RootView: View {
 
     @ViewBuilder
     private var overlays: some View {
-        if model.navVisible && !model.playerActive && !model.navItems.isEmpty {
+        if model.navVisible && !model.playerActive && !model.playerChrome.open && !model.navItems.isEmpty {
             GlassTabBar(
                 items: model.navItems,
                 select: { model.select(tab: $0) },

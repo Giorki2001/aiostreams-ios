@@ -80,7 +80,10 @@ enum Scripts {
         let visible = false;
         let items = [];
         if (nav) {
-          visible = getComputedStyle(nav).display !== 'none' && nav.getClientRects().length > 0;
+          const css = getComputedStyle(nav);
+          visible = css.display !== 'none' && css.visibility !== 'hidden'
+            && nav.getClientRects().length > 0
+            && !document.documentElement.classList.contains('playing');
           items = Array.from(nav.querySelectorAll('button[data-name]')).map((button) => ({
             id: button.dataset.name,
             label: (button.textContent || '').trim() || button.getAttribute('aria-label') || '',
@@ -147,6 +150,11 @@ enum Scripts {
           childList: true,
           attributes: true,
           attributeFilter: ['aria-current', 'data-name', 'data-visible', 'data-loading'],
+        });
+        // The player route marks <html> with `playing` and hides the shell.
+        new MutationObserver(soon).observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ['class'],
         });
         window.addEventListener('hashchange', soon);
         window.addEventListener('resize', soon);
