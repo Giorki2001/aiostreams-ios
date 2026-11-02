@@ -1,0 +1,99 @@
+name: Build IPA
+
+# Builds an unsigned AIOStreams.ipa for sideloading (LiveContainer, SideStore, AltStore, Feather…).
+# Every push to main publishes it as the latest release, so this link always points to the newest build:
+# https://github.com/<owner>/<repo>/releases/latest/download/AIOStreams.ipa
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: xcodebuild (iOS, unsigned)
+    # AetherEngine supports the Xcode 27 toolchain (Swift 6.4); this image is GitHub's Xcode 27 one.
+    runs-on: xcode-27
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+          swift --version
+
+      - name: Generate the Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - uses: actions/cache@v4
+        with:
+          path: build/SourcePackages
+          key: spm-${{ runner.os }}-${{ hashFiles('project.yml') }}
+          restore-keys: spm-${{ runner.os }}-
+
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project AIOStreams.xcodeproj \
+            -scheme AIOStreams \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            2>&1 | tee build.log | grep -E "(error|warning):|\*\* BUILD" || true
+          grep -q "\*\* BUILD SUCCEEDED \*\*" build.log
+
+      - name: Package the IPA
+        run: |
+          app=build/Build/Products/Release-iphoneos/AIOStreams.app
+          test -d "$app"
+          mkdir -p Payload
+          cp -R "$app" Payload/
+          zip -qry AIOStreams.ipa Payload
+          ls -lh AIOStreams.ipa
+          echo "VERSION=$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Info.plist")" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AIOStreams-ipa
+          path: AIOStreams.ipa
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: build-log
+          path: build.log
+
+      - name: Publish the release
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: AIOStreams ${{ env.VERSION }} (${{ github.run_number }})
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          files: AIOStreams.ipa
+          body: |
+            Build automatica di `${{ github.sha }}`.
+
+            Scarica **AIOStreams.ipa** e aprilo con LiveContainer o SideStore (vedi il README).
