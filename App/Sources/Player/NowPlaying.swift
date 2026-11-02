@@ -65,19 +65,24 @@ final class NowPlaying {
             guard let (data, _) = try? await URLSession.shared.data(from: url),
                   let image = UIImage(data: data) else { return }
             guard let self, self.artworkURL == string else { return }
-            self.artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+            self.artwork = Self.artwork(image)
             self.refresh()
         }
+    }
+
+    /// MediaPlayer asks for the picture off the main thread.
+    private nonisolated static func artwork(_ image: UIImage) -> MPMediaItemArtwork {
+        MPMediaItemArtwork(boundsSize: image.size) { _ in image }
     }
 
     private func setUpCommands() {
         guard !commandsReady else { return }
         commandsReady = true
         let center = MPRemoteCommandCenter.shared()
-        func on(_ command: MPRemoteCommand, _ key: @escaping (MPRemoteCommandEvent) -> [String: Any]?) {
+        func on(_ command: MPRemoteCommand, _ makeKey: @escaping (MPRemoteCommandEvent) -> [String: Any]?) {
             command.isEnabled = true
             command.addTarget { [weak self] event in
-                guard let key = key(event) else { return .commandFailed }
+                guard let key = makeKey(event) else { return .commandFailed }
                 MainActor.assumeIsolated { self?.press(key) }
                 return .success
             }
