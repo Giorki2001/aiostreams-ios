@@ -27,9 +27,11 @@ struct RootView: View {
             WebViewContainer(host: model.web)
                 .ignoresSafeArea()
 
-            VolumeViewHost(levels: model.levels)
-                .frame(width: 1, height: 1)
-                .allowsHitTesting(false)
+            if model.playerActive {
+                VolumeViewHost(levels: model.levels)
+                    .frame(width: 1, height: 1)
+                    .allowsHitTesting(false)
+            }
 
             overlays
         }
@@ -58,12 +60,8 @@ struct RootView: View {
             .transition(.move(edge: .bottom).combined(with: .opacity))
         }
 
-        if model.playerActive && model.controlsShown {
-            PlayerButtons(pip: model.pip)
-                .padding(.top, 10)
-                .padding(.trailing, 16)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                .transition(.opacity)
+        if model.playerActive {
+            playerOverlays
         }
 
         if model.statsVisible {
@@ -81,6 +79,36 @@ struct RootView: View {
             )
             .padding(24)
         }
+    }
+}
+
+extension RootView {
+    /// AirPlay and PiP sit in the room the page leaves in its top bar and come and go
+    /// with its controls; the volume and AirPlay notices sit at the top centre.
+    @ViewBuilder
+    var playerOverlays: some View {
+        let chrome = model.playerChrome
+        GeometryReader { _ in
+            if let slot = chrome.slot {
+                PlayerButtons(pip: model.pip)
+                    .frame(width: slot.width, height: 44, alignment: .trailing)
+                    .position(x: slot.x + slot.width / 2, y: slot.y)
+                    .opacity(chrome.visible ? 1 : 0)
+                    .allowsHitTesting(chrome.visible)
+                    .animation(.easeInOut(duration: 0.3), value: chrome.visible)
+            }
+        }
+        .ignoresSafeArea()
+
+        VStack(spacing: 10) {
+            VolumeHUD(levels: model.levels)
+            if chrome.visible {
+                AirPlayNotice(engine: model.engine)
+            }
+        }
+        .padding(.top, 12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .animation(.easeInOut(duration: 0.3), value: chrome.visible)
     }
 }
 

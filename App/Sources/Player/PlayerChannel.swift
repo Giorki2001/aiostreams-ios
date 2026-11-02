@@ -89,7 +89,8 @@ final class PlayerChannel {
             if let fit = message["fit"] as? String { engine.videoGravity = SubtitleStyle.gravity(fit) }
             if let look = message["subtitles"] as? [String: Any] { model?.subtitleStyle = SubtitleStyle(look) }
         case "player-controls":
-            model?.controlsShown = message["shown"] as? Bool ?? true
+            // The native buttons follow the controls in the page itself (PlayerChrome).
+            break
         case "player-stats-overlay":
             model?.statsVisible = message["page"] is String
         case "player-stats":

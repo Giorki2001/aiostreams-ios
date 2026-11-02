@@ -78,3 +78,23 @@ struct StatsOverlay: View {
         return lines.joined(separator: "\n")
     }
 }
+
+/// AirPlay takes the picture only from the native route: a title the iPhone decodes
+/// itself (AV1 or VP9 without hardware decoding, 10-bit H.264, deinterlaced video)
+/// sends the receiver its sound alone, and the viewer should know why.
+struct AirPlayNotice: View {
+    @ObservedObject var engine: AetherEngine
+
+    var body: some View {
+        if engine.airPlayPictureStaysLocal {
+            Label("Su AirPlay arriva solo l'audio: questo video lo decodifica l'iPhone", systemImage: "airplayvideo")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .glassEffect(.regular, in: .capsule)
+                .allowsHitTesting(false)
+                .transition(.opacity)
+        }
+    }
+}

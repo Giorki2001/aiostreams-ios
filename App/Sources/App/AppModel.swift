@@ -15,6 +15,21 @@ private struct NavState: Decodable {
     let items: [NavItem]
 }
 
+/// The page's player controls, as the app's buttons follow them: whether they show,
+/// and the room the page leaves for the AirPlay and PiP buttons in its top bar.
+struct PlayerChrome: Equatable, Decodable {
+    struct Slot: Equatable, Decodable {
+        /// Leading edge and vertical centre, in the web view's points.
+        let x: Double
+        let y: Double
+        let width: Double
+    }
+
+    var open = false
+    var visible = false
+    var slot: Slot?
+}
+
 /// Everything the app's views show, and the parts that talk to the page and the player.
 @MainActor
 final class AppModel: ObservableObject {
@@ -25,7 +40,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var navItems: [NavItem] = []
     @Published private(set) var navVisible = false
     @Published private(set) var fullscreen = false
-    @Published var controlsShown = true
+    @Published private(set) var playerChrome = PlayerChrome()
     @Published var playerActive = false
     @Published var statsVisible = false
     @Published var loadError: String?
@@ -75,7 +90,10 @@ final class AppModel: ObservableObject {
         $playerActive
             .removeDuplicates()
             .sink { [weak self] active in
-                MainActor.assumeIsolated { self?.web.playerActive(active) }
+                MainActor.assumeIsolated {
+                    self?.web.playerActive(active)
+                    self?.levels.hudEnabled = active
+                }
             }
             .store(in: &cancellables)
     }
@@ -103,6 +121,13 @@ final class AppModel: ObservableObject {
               let state = try? JSONDecoder().decode(NavState.self, from: data) else { return }
         if navItems != state.items { navItems = state.items }
         if navVisible != state.visible { navVisible = state.visible }
+    }
+
+    func updatePlayerChrome(json: String) {
+        guard let data = json.data(using: .utf8),
+              let chrome = try? JSONDecoder().decode(PlayerChrome.self, from: data),
+              chrome != playerChrome else { return }
+        playerChrome = chrome
     }
 
     func select(tab: NavItem) {

@@ -40,6 +40,7 @@ final class WebViewHost: NSObject, WKNavigationDelegate, WKUIDelegate {
         let handler = ScriptHandler(host: self)
         controller.add(handler, name: "aiostreams")
         controller.add(handler, name: "aiostreamsNav")
+        controller.add(handler, name: "aiostreamsPlayer")
         configuration.userContentController = controller
 
         let view = WKWebView(frame: .zero, configuration: configuration)
@@ -76,6 +77,7 @@ final class WebViewHost: NSObject, WKNavigationDelegate, WKUIDelegate {
         switch message.name {
         case "aiostreams": bridge.receive(json: body)
         case "aiostreamsNav": model?.updateNav(json: body)
+        case "aiostreamsPlayer": model?.updatePlayerChrome(json: body)
         default: break
         }
     }
