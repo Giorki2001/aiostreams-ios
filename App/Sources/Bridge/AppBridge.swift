@@ -11,7 +11,7 @@ final class AppBridge {
     weak var model: AppModel?
     weak var webView: WKWebView?
 
-    static var appVersion: String {
+    nonisolated static var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
     }
 
@@ -122,7 +122,7 @@ final class AppBridge {
         ].joined(separator: "\n")
     }
 
-    static func number(_ value: Any?) -> Double? {
+    nonisolated static func number(_ value: Any?) -> Double? {
         switch value {
         case let n as NSNumber where CFGetTypeID(n) != CFBooleanGetTypeID():
             return n.doubleValue
