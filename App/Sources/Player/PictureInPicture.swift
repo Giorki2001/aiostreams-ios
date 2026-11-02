@@ -78,6 +78,8 @@ final class PictureInPicture: NSObject, ObservableObject {
     private func watchExternalPlayback(_ player: AVPlayer?) {
         externalObservation = player?.observe(\.isExternalPlaybackActive, options: [.initial, .new]) { [weak self] player, _ in
             let active = player.isExternalPlaybackActive
+            AppLog.emit("external playback active=\(active)")
+            AppLog.route()
             DispatchQueue.main.async { self?.engine.setAirPlayReceiverShowsVideo(active) }
         }
     }

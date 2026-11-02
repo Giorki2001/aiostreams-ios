@@ -7,6 +7,7 @@ struct GlassTabBar: View {
     let select: (NavItem) -> Void
     let changeServer: () -> Void
     let reload: () -> Void
+    let exportLog: () -> Void
     @Namespace private var selection
 
     var body: some View {
@@ -70,6 +71,7 @@ struct GlassTabBar: View {
             button.contextMenu {
                 Button("Cambia server", systemImage: "server.rack", action: changeServer)
                 Button("Ricarica", systemImage: "arrow.clockwise", action: reload)
+                Button("Esporta log del player", systemImage: "doc.text", action: exportLog)
             }
         } else {
             button

@@ -1,4 +1,5 @@
 import AetherEngine
+import AVFoundation
 import Combine
 import SwiftUI
 import UIKit
@@ -61,6 +62,7 @@ final class AppModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     init() {
+        LogBuffer.shared.install()
         let engine: AetherEngine
         do {
             engine = try AetherEngine()
@@ -87,6 +89,10 @@ final class AppModel: ObservableObject {
             showServerSetup = true
         }
 
+        NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)
+            .sink { _ in AppLog.route() }
+            .store(in: &cancellables)
+
         $playerActive
             .removeDuplicates()
             .sink { [weak self] active in
@@ -107,6 +113,12 @@ final class AppModel: ObservableObject {
         loadError = nil
         showServerSetup = false
         web.load(url)
+    }
+
+    /// The engine's log, for when something doesn't play.
+    func exportLog() {
+        let text = bridge.diagnostics(web: nil) + "\n\n" + LogBuffer.shared.tail()
+        Share.file(named: "aiostreams-ios-log.txt", text: text)
     }
 
     func reload() {

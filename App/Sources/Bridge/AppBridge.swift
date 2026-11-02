@@ -48,7 +48,8 @@ final class AppBridge {
         case "links-ready":
             model.pageWantsLinks()
         case "diagnostics":
-            send(["type": "diagnostics", "text": diagnostics(web: message["web"] as? String)])
+            let text = diagnostics(web: message["web"] as? String) + "\n\nPlayer log\n" + LogBuffer.shared.tail(400)
+            send(["type": "diagnostics", "text": text])
         case "crash-report":
             send(["type": "crash-report"])
         case "player-engine":
@@ -111,7 +112,7 @@ final class AppBridge {
         ]
     }
 
-    private func diagnostics(web: String?) -> String {
+    func diagnostics(web: String?) -> String {
         let device = UIDevice.current
         return [
             "App        AIOStreams iOS \(Self.appVersion)",

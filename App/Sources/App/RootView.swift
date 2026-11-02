@@ -50,7 +50,8 @@ struct RootView: View {
                 items: model.navItems,
                 select: { model.select(tab: $0) },
                 changeServer: { model.showServerSetup = true },
-                reload: { model.reload() }
+                reload: { model.reload() },
+                exportLog: { model.exportLog() }
             )
             .padding(.horizontal, 16)
             .padding(.bottom, 2)
