@@ -92,8 +92,8 @@ final class WebViewHost: NSObject, WKNavigationDelegate, WKUIDelegate {
             model?.open(link: url)
             return decisionHandler(.cancel)
         }
-        let internal = url.host == nil || url.host == host || url.scheme == "about" || url.scheme == "blob" || url.scheme == "data"
-        if !internal, navigationAction.targetFrame?.isMainFrame != false {
+        let inApp = url.host == nil || url.host == host || url.scheme == "about" || url.scheme == "blob" || url.scheme == "data"
+        if !inApp, navigationAction.targetFrame?.isMainFrame != false {
             UIApplication.shared.open(url)
             return decisionHandler(.cancel)
         }
