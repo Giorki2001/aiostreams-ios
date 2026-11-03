@@ -32,9 +32,13 @@ L'app carica l'app web di AIOStreams in una WebView e si presenta come app nativ
 La build gira su GitHub Actions (`.github/workflows/build.yml`). In locale servono Xcode 27 e [XcodeGen](https://github.com/yonaskolb/XcodeGen):
 
 ```sh
+sh Scripts/fetch-aetherengine.sh   # AetherEngine con le patch dell'app, in Vendor/
 xcodegen generate
 open AIOStreams.xcodeproj
 ```
+
+Le patch al motore stanno in `Patches/AetherEngine/`:
+- `0001-airplay-compatible-aac-audio.patch` aggiunge `AudioBridgeMode.airPlayCompat`, che converte l'audio in AAC stereo. Serve per le TV con AirPlay integrato (per esempio LG webOS), che rifiutano E-AC-3 e FLAC.
 
 ## Licenze
 

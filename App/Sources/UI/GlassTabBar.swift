@@ -27,7 +27,7 @@ struct GlassTabBar: View {
                     Button { select(search) } label: {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 21, weight: .semibold))
-                            .foregroundStyle(search.current ? Color.brand : Color.primary)
+                            .foregroundStyle(search.current ? Color.brandLight : Color.primary)
                             .frame(width: 62, height: 62)
                             .contentShape(.circle)
                     }
@@ -52,7 +52,7 @@ struct GlassTabBar: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
-            .foregroundStyle(item.current ? Color.brand : Color.primary)
+            .foregroundStyle(item.current ? Color.brandLight : Color.primary)
             .frame(maxWidth: .infinity, minHeight: 54)
             .background {
                 if item.current {

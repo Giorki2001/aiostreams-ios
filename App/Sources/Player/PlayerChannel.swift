@@ -51,6 +51,8 @@ final class PlayerChannel {
     private var lastPositionSentAt: CFTimeInterval = 0
     /// The last of every state field, for `player-sync`.
     private var state: [String: Any] = [:]
+    /// Whether this title's audio is already AAC for an AirPlay receiver that takes nothing else.
+    private var aacForAirPlay = false
 
     init(engine: AetherEngine, bridge: AppBridge) {
         self.engine = engine
@@ -159,6 +161,11 @@ final class PlayerChannel {
         options.nativeSubtitlePreferredLanguages = subtitleLanguages
         options.autoplay = !wantsPause
         options.audioDelaySeconds = audioDelayMs / 1000
+        aacForAirPlay = AirPlayReceivers.currentTakesAACOnly
+        if aacForAirPlay {
+            options.audioBridgeMode = .airPlayCompat
+            AppLog.emit("AirPlay receiver takes AAC only; loading with AAC audio")
+        }
 
         let engine = engine
         loadTask = Task { [weak self] in
@@ -320,6 +327,50 @@ final class PlayerChannel {
         let track = engine.addExternalSubtitleTrack(ExternalSubtitleTrack(url: file, name: String(name.prefix(200))))
         engine.selectSubtitleTrack(index: track.id)
         sendTracks()
+    }
+
+    // MARK: AirPlay receivers
+
+    /// A smart TV's AirPlay receiver refused the stream: `codecs` is what it was offered. An H.264 picture
+    /// with other audio plays once the audio is AAC, so the title reloads where it is with AAC audio and
+    /// the receiver is remembered; a picture the TV can't decode can only be explained.
+    func receiverRefused(codecs: [String]) {
+        guard active else { return }
+        let videoPrefixes = ["avc1", "avc3", "hvc1", "hev1", "dvh1", "dvhe", "av01", "dav1", "vp09", "vp08"]
+        let video = codecs.first { codec in videoPrefixes.contains { codec.hasPrefix($0) } }
+        let audio = codecs.filter { $0 != video }
+        let pictureOK = video.map { $0.hasPrefix("avc1") || $0.hasPrefix("avc3") } ?? true
+
+        if !pictureOK {
+            let name = video.map { $0.hasPrefix("av01") || $0.hasPrefix("dav1") ? "AV1" : $0.hasPrefix("vp0") ? "VP9" : "HEVC (4K, HDR, Dolby Vision)" } ?? "in questo formato"
+            showAirPlayProblem("La TV non accetta video \(name) via AirPlay. Scegli una versione H.264 (x264) o usa l'app sulla TV.")
+            return
+        }
+        if audio.contains(where: { !$0.hasPrefix("mp4a") }) {
+            // The same refusal arrives several times in a row; one reload answers all of them.
+            guard !aacForAirPlay else { return }
+            aacForAirPlay = true
+            AirPlayReceivers.rememberCurrentTakesAACOnly()
+            AppLog.emit("AirPlay receiver refused audio \(audio); reloading with AAC audio")
+            model?.airPlayProblem = nil
+            let engine = engine
+            Task { [weak self] in
+                do {
+                    try await engine.reloadAtCurrentPosition { $0.audioBridgeMode = .airPlayCompat }
+                } catch {
+                    AppLog.emit("AAC reload failed: \(error)")
+                    self?.showAirPlayProblem("La TV non accetta l'audio di questo video via AirPlay. Usa la duplicazione schermo o l'app sulla TV.")
+                }
+            }
+            return
+        }
+        showAirPlayProblem("La TV non accetta questo video via AirPlay. Usa la duplicazione schermo o l'app sulla TV.")
+    }
+
+    private func showAirPlayProblem(_ text: String) {
+        guard model?.airPlayProblem != text else { return }
+        model?.airPlayProblem = text
+        AppLog.emit("AirPlay problem shown: \(text)")
     }
 
     // MARK: Engine → page

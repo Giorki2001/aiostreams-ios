@@ -102,15 +102,8 @@ final class AppModel: ObservableObject {
             .store(in: &cancellables)
         NotificationCenter.default.publisher(for: .airPlayReceiverRefused)
             .sink { [weak self] note in
-                let hevc = note.userInfo?["hevc"] as? Bool ?? false
-                let problem = hevc
-                    ? "La TV non accetta video HEVC (4K, HDR, Dolby Vision) via AirPlay. Scegli una versione H.264 o usa la duplicazione schermo."
-                    : "La TV non accetta il formato di questo video via AirPlay. Prova un'altra versione o usa la duplicazione schermo."
-                MainActor.assumeIsolated {
-                    guard let self, self.airPlayProblem != problem else { return }
-                    self.airPlayProblem = problem
-                    AppLog.emit("AirPlay receiver refused the stream (hevc=\(hevc))")
-                }
+                let codecs = note.userInfo?["codecs"] as? [String] ?? []
+                MainActor.assumeIsolated { self?.player.receiverRefused(codecs: codecs) }
             }
             .store(in: &cancellables)
 

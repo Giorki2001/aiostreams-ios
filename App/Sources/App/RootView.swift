@@ -24,8 +24,10 @@ struct RootView: View {
                 .ignoresSafeArea()
             }
 
+            // The player draws edge to edge and pads its own controls; every other page sits below
+            // the status bar, since most of them don't make room for it.
             WebViewContainer(host: model.web)
-                .ignoresSafeArea()
+                .ignoresSafeArea(edges: webEdges)
 
             if model.playerActive {
                 VolumeViewHost(levels: model.levels)
@@ -41,6 +43,10 @@ struct RootView: View {
             ServerSetupView()
                 .environmentObject(model)
         }
+    }
+
+    private var webEdges: Edge.Set {
+        model.playerActive || model.playerChrome.open || model.fullscreen ? .all : [.horizontal, .bottom]
     }
 
     @ViewBuilder

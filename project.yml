@@ -7,9 +7,9 @@ options:
   defaultConfig: Release
 
 packages:
+  # Upstream AetherEngine with the app's patches, put in place by Scripts/fetch-aetherengine.sh.
   AetherEngine:
-    url: https://github.com/superuser404notfound/AetherEngine
-    minorVersion: 7.54.0
+    path: Vendor/AetherEngine
 
 settings:
   base:

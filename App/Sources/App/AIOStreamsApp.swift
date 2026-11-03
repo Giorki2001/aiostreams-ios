@@ -31,6 +31,8 @@ struct AIOStreamsApp: App {
 extension Color {
     /// AIOStreams' brand purple (#6152DF).
     static let brand = Color(red: 97 / 255, green: 82 / 255, blue: 223 / 255)
+    /// The brand lightened (#9D93FF), for text and symbols on glass over bright artwork.
+    static let brandLight = Color(red: 157 / 255, green: 147 / 255, blue: 255 / 255)
     /// The page's own background (#070707).
     static let page = Color(red: 7 / 255, green: 7 / 255, blue: 7 / 255)
 }

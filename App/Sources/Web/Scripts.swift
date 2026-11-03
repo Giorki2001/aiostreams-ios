@@ -86,7 +86,8 @@ enum Scripts {
             && !document.documentElement.classList.contains('playing');
           items = Array.from(nav.querySelectorAll('button[data-name]')).map((button) => ({
             id: button.dataset.name,
-            label: (button.textContent || '').trim() || button.getAttribute('aria-label') || '',
+            label: ((button.lastElementChild && button.lastElementChild.textContent) || '').trim()
+              || button.getAttribute('aria-label') || '',
             current: button.getAttribute('aria-current') === 'page',
           }));
         }

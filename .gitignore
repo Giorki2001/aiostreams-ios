@@ -2,6 +2,9 @@
 *.xcodeproj/
 App/Info.plist
 
+# Fetched by Scripts/fetch-aetherengine.sh
+Vendor/
+
 # Build output
 build/
 DerivedData/
