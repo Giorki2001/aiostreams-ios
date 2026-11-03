@@ -76,13 +76,25 @@ enum AirPlayReceivers {
         AVAudioSession.sharedInstance().currentRoute.outputs.first { $0.portType == .airPlay }
     }
 
+    /// The current receiver's UID, when it names one device: a generic one would put every AirPlay
+    /// receiver, an Apple TV included, on the AAC list for one TV's sake.
+    private static var currentUID: String? {
+        guard let port = current else { return nil }
+        let uid = port.uid.trimmingCharacters(in: .whitespaces)
+        guard !uid.isEmpty, uid.lowercased() != "airplay", uid != port.portName else { return nil }
+        return uid
+    }
+
     static var currentTakesAACOnly: Bool {
-        guard let uid = current?.uid else { return false }
+        guard let uid = currentUID else { return false }
         return Set(UserDefaults.standard.stringArray(forKey: key) ?? []).contains(uid)
     }
 
     static func rememberCurrentTakesAACOnly() {
-        guard let uid = current?.uid else { return }
+        guard let uid = currentUID else {
+            AppLog.emit("AirPlay receiver has no device UID; not remembering it")
+            return
+        }
         var known = Set(UserDefaults.standard.stringArray(forKey: key) ?? [])
         guard known.insert(uid).inserted else { return }
         UserDefaults.standard.set(Array(known), forKey: key)
@@ -98,7 +110,7 @@ enum AppLog {
     /// Where the sound goes, e.g. `AirPlay:[LG] webOS TV`.
     static func route() {
         let outputs = AVAudioSession.sharedInstance().currentRoute.outputs
-            .map { "\($0.portType.rawValue):\($0.portName)" }
+            .map { "\($0.portType.rawValue):\($0.portName) uid=\($0.uid)" }
             .joined(separator: ", ")
         emit("audio route: \(outputs.isEmpty ? "none" : outputs)")
     }
